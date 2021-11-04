@@ -20,7 +20,15 @@ import pickle
 import numpy as np
 import csv
 
-
+def CreateDir(dirName, clean = False):
+    try:
+        # Create target Directory
+        os.mkdir(dirName)
+        logging.debug("Directory " + dirName +  " Created ")
+    except FileExistsError:
+        if clean:
+            os.system("rm -rf " + dirName + "/*.*")
+        logging.debug("Directory " + dirName +  " already exists")
 
 def Get_AllZipCodes(outdir):
     # Property Zipcode in ZAssmt is 29 (indexed at 0)
@@ -39,10 +47,12 @@ def Load_DF(outdir, FileName):
     print(mdf)
     return mdf
 
-def clean_data(outdir, zipcode):
+def clean_data(outdir, csvdir, zipcode):
     # STEP 1
     # Load all the relevent DF for this zipcode
     outdirPath = os.path.join(outdir, str(zipcode))
+    csvdirPath = os.path.join(csvdir, str(zipcode))
+    CreateDir(csvdirPath)
     za_main = Load_DF(outdirPath, "ZAsmt.Main.txt.pkl")
     za_pool = Load_DF(outdirPath, "ZAsmt.Pool.txt.pkl")
     za_bldg = Load_DF(outdirPath, "ZAsmt.Building.txt.pkl")
@@ -204,9 +214,9 @@ def clean_data(outdir, zipcode):
     #STEP 50: Export the dataframes to CSV. df should be the one we want to run the analysis on
     #########################################
 
-    za.to_csv(os.path.join(outdirPath,"za.csv"), index = False)
-    zt.to_csv(os.path.join(outdirPath, "zt.csv"), index = False)
-    df.to_csv(os.path.join(outdirPath, "df.csv"), index = False)
+    za.to_csv(os.path.join(csvdirPath,"za.csv"), index = False)
+    zt.to_csv(os.path.join(csvdirPath, "zt.csv"), index = False)
+    df.to_csv(os.path.join(csvdirPath, "df.csv"), index = False)
 
 
 if __name__ == "__main__":
@@ -217,7 +227,9 @@ if __name__ == "__main__":
     logging.debug('Clean dataframes and Merge data by Zipcode')
     parser = argparse.ArgumentParser(description='Extract data from zillow')
     parser.add_argument("--outdir", "-o", default="OUTDIR/",
-                        help= "Path to the output folder for extracted data")
+                        help= "Path to the OUTDIR folder with extracted pkl data")
+    parser.add_argument("--csvdir", "-c", default="OUTDIR/ZIPCODES",
+                        help="Path to the output folder for extracted csv files")
     parser.add_argument("--zipcode", "-z", default="all",
                         help= "Zipcode , required")
     args = parser.parse_args()
@@ -230,4 +242,4 @@ if __name__ == "__main__":
 
     for i in zipcode_list:
         print(i)
-        clean_data(args.outdir, str(i))
+        clean_data(args.outdir, args.csvdir, str(i))
